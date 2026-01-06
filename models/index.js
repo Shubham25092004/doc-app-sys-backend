@@ -11,3 +11,12 @@ Appointment.belongsTo(User, { foreignKey: 'doctorId', as: 'doctor' })
 
 // Updated By → User
 Appointment.belongsTo(User, { foreignKey: 'updatedBy', as: 'updatedByUser' })
+
+
+
+
+
+//user -> doctor 
+
+User.belongsTo(Doctor,{foreignKey:"createdBy"})
+Doctor.belongsTo(User, { foreignKey: "createdBy", as: "createdUser" })

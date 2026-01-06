@@ -4,10 +4,12 @@ const jwt = require("jsonwebtoken")
 require('dotenv').config()
 
 
+BASEURL = 'http://localhost:7005/upload/'
+
 const register = async (req, res) => {
   try {
     const { name, email, password, contactNumber, address } = req.body;
-
+    imagePath = req.file ? req.file.filename : null
     
     const existingUser = await User.findOne({ where: { email } });
 
@@ -29,6 +31,7 @@ const register = async (req, res) => {
       password: hashedPassword,
       contactNumber,
       address,
+      imagePath
     });
 
     return res.status(201).send({
@@ -73,7 +76,7 @@ console.log(loggedUser, "logged user**************************")
 
                 const token = jwt.sign(payload, process.env.JWT_SECRET,{expiresIn:'1d'})
 
-                res.status(202).send({msg:"Logged Successfully", success:true, token:token})
+                res.status(200).send({msg:"Logged Successfully", success:true, token:token})
 
 
     } catch (error) {
@@ -82,24 +85,19 @@ console.log(loggedUser, "logged user**************************")
 }
 
 
-const getUserInfo = async(req, res) => {
-    try {
+const getUserInfo = async (req, res) => {
+  try {
+        const loggedUser = await User.findByPk(
+            req.user.id,{
+      attributes:["id", "name","email","address","role","imagePath"]
+    });
 
-        const user = await User.findByPk(req.user.id,{
-            attributes: {exclude: ["password"]}
-        })
+    loggedUser.imagePath = BASEURL+loggedUser.imagePath
 
-        if(!user){
-            return res.status(404).json({ msg: "User not found" })
-        }
-             res.status(200).json({
-                success:true,
-                user
-            })
-        
-        
-    } catch (error) {
-        res.status(500).send({msg:"server error"})
+        console.log("------------------",loggedUser)
+        res.status(200).send({user:loggedUser,success:true})
+    }catch(error){
+        res.status(500).send({msg:"Server Error"})
     }
 }
 

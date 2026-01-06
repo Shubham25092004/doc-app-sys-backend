@@ -21,7 +21,7 @@ async function testConnection(){
     }
 }
 
-  syncDB = async (force = false, alter = false) =>{
+  syncDB = async (force = false, alter =false) =>{
     try {
         await sequelize.sync(force, alter)
         console.log("✅ ALL MODELS WESE SYNCHRONIZED SUCCESSFULLY")

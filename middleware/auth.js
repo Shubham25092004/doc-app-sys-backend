@@ -21,11 +21,20 @@ try {
 }   
 }
 function doctor(req,res,next){
-    if(req.user.role = 'doctor'){
+    if(req.user.role == 'Doctor'){
         next()
     }else{
         res.status(200).send({msg:"you are not authorized"})
     }
 }
 
-module.exports  = {auth,doctor}
+
+function admin(req,res,next){
+    if(req.user.role == 'Admin'){
+        next()
+    }else{
+        res.status(200).send({msg:"you are not authorized"})
+    }
+}
+
+module.exports  = {auth,doctor,admin}

@@ -1,53 +1,87 @@
 const Appointment = require("../models/appointmentModel");
 
- async function createAppointment(req, res) {
+/* =========================
+   CREATE APPOINTMENT
+========================= */
+async function createAppointment(req, res) {
   try {
-    const {dateTime, doctorId} = req.body 
-     const createdBy = req.user.id
+    const { dateTime, doctorId } = req.body;
+    const createdBy = req.user.id;
 
-     const newAppoint =  Appointment.create({dateTime, doctorId,createdBy})
-    if(!newAppoint){
-    res.status(200).send({ msg: "appointment not created", success:false });
-    }
-    res.status(200).send({ msg: "appointment created successfully", success:true });
+    const newAppointment = await Appointment.create({
+      dateTime,
+      doctorId,
+      createdBy
+    });
+
+    return res.status(200).send({
+      msg: "Appointment created successfully",
+      success: true,
+      appointment: newAppointment
+    });
+
   } catch (error) {
-    
-    res.status(500).send({ msg: "Server Error" });
+    return res.status(500).send({ msg: "Server Error" });
   }
 }
 
+/* =========================
+   UPDATE STATUS BY DOCTOR
+========================= */
 async function statusUpdateByDoctor(req, res) {
-    const {ID} = req.params
-    console.log(ID,"________id_______")
+  const { ID } = req.params;
+
   try {
-    const updatedAppointment = await Appointment.update({
-        status:req.body.status,
-        updatedBy:req.user.id
-    },{
-        where:{id:ID}
-    })
-    console.log(updatedAppointment,"updatedAppointment")
-    if(updatedAppointment.length == 0){
-    res.status(200).send({ msg: "appointment not updated", success:false });
+    const [updated] = await Appointment.update(
+      {
+        status: req.body.status,
+        updatedBy: req.user.id
+      },
+      {
+        where: { id: ID }
+      }
+    );
+
+    if (!updated) {
+      return res.status(200).send({
+        msg: "Appointment not updated",
+        success: false
+      });
     }
-    res.status(200).send({ msg: "appointments status updated successfully",success:true });
+
+    return res.status(200).send({
+      msg: "Appointment status updated",
+      success: true
+    });
+
   } catch (error) {
-    res.status(500).send({ msg: "Server Error" });
+    return res.status(500).send({ msg: "Server Error" });
   }
 }
 
-const updateAppointment = async (req, res) => {
+/* =========================
+   UPDATE APPOINTMENT (USER)
+========================= */
+async function updateAppointment(req, res) {
   const { ID } = req.params;
   const { dateTime, doctorId } = req.body;
 
   try {
     const appointment = await Appointment.findByPk(ID);
 
-    if (!appointment)
-      return res.status(404).json({ success: false, msg: "Appointment not found" });
+    if (!appointment) {
+      return res.status(404).send({
+        msg: "Appointment not found",
+        success: false
+      });
+    }
 
-    if (appointment.createdBy !== req.user.id)
-      return res.status(403).json({ success: false, msg: "Unauthorized" });
+    if (appointment.createdBy !== req.user.id) {
+      return res.status(403).send({
+        msg: "Unauthorized",
+        success: false
+      });
+    }
 
     await appointment.update({
       dateTime,
@@ -55,66 +89,88 @@ const updateAppointment = async (req, res) => {
       updatedBy: req.user.id
     });
 
-    res.status(200).json({ success: true, msg: "Appointment updated", data: appointment });
-  } catch (err) {
-    res.status(500).json({ msg: "Server Error" });
+    return res.status(200).send({
+      msg: "Appointment updated successfully",
+      success: true,
+      appointment
+    });
+
+  } catch (error) {
+    return res.status(500).send({ msg: "Server Error" });
   }
-};
+}
 
-
+/* =========================
+   DELETE APPOINTMENT
+========================= */
 async function deleteAppointment(req, res) {
   try {
     const appointmentId = Number(req.params.ID);
-    const doctorId = Number(req.user.id);
+    const userId = req.user.id;
 
     const deleted = await Appointment.destroy({
       where: {
         id: appointmentId,
-        doctorId: doctorId
+        createdBy: userId
       }
     });
 
     if (!deleted) {
-      return res.status(200).json({msg: "Appointment not deleted",success: false});
+      return res.status(200).send({
+        msg: "Appointment not deleted",
+        success: false
+      });
     }
 
-    return res.status(200).json({msg: "Appointment deleted successfully", success: true });
+    return res.status(200).send({
+      msg: "Appointment deleted successfully",
+      success: true
+    });
 
   } catch (error) {
-    return res.status(500).json({ msg: "Server Error" });
+    return res.status(500).send({ msg: "Server Error" });
   }
 }
 
+/* =========================
+   GET APPOINTMENTS (USER)
+========================= */
 async function getAppointmentsByUser(req, res) {
   try {
     const appointments = await Appointment.findAll({
-        where:{createdBy: req.user.id}
-    })
-    if(appointments.length === 0){
-      return  res.status(400).send({msg:"No appointments yet"})
-    }
-   return res.status(200).send({ appointments:appointments,success:true });
+      where: { createdBy: req.user.id }
+    });
+
+    return res.status(200).send({
+      success: true,
+      appointments
+    });
+
   } catch (error) {
-   return res.status(500).send({ msg: "Server Error" });
+    return res.status(500).send({ msg: "Server Error" });
   }
 }
 
+/* =========================
+   GET APPOINTMENTS (DOCTOR)
+========================= */
 async function showAppointmentsOfDoctor(req, res) {
+  console.log("Logged-in Doctor ID:", req.user.id); 
   try {
-    // req.userid (docotr id )
-
-     const appointments =await Appointment.findAll({
-        where:{doctorId: req.user.id}
-    })
-    if(appointments.length == 0){
-        res.status(400).send({msg:"No appointments yet", success: false,})
-    }
-    res.status(200).send({ appointments:appointments,success:true });
-
+    const appointments = await Appointment.findAll({
+      where: { doctorId: req.user.id }
+    });
+    console.log("Appointments found:", appointments); 
+    return res.status(200).send({
+      success: true,
+      appointments
+    });
   } catch (error) {
-    res.status(500).send({ msg: "Server Error" });
+    console.error(error);
+    return res.status(500).send({ msg: "Server Error" });
   }
 }
+
 
 module.exports = {
   createAppointment,
@@ -122,5 +178,5 @@ module.exports = {
   updateAppointment,
   deleteAppointment,
   getAppointmentsByUser,
-  showAppointmentsOfDoctor,
+  showAppointmentsOfDoctor
 };
